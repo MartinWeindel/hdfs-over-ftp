@@ -1,9 +1,9 @@
 package org.apache.hadoop.contrib.ftp;
 
 import org.apache.ftpserver.FtpServerConfigurationException;
-import org.apache.ftpserver.ssl.AliasKeyManager;
+import org.apache.ftpserver.ssl.impl.AliasKeyManager;
 import org.apache.ftpserver.ssl.ClientAuth;
-import org.apache.ftpserver.ssl.ExtendedAliasKeyManager;
+import org.apache.ftpserver.ssl.impl.ExtendedAliasKeyManager;
 import org.apache.ftpserver.ssl.SslConfiguration;
 import org.apache.ftpserver.util.ClassUtils;
 import org.apache.ftpserver.util.IoUtils;
@@ -263,7 +263,7 @@ public class MySslConfiguration implements SslConfiguration {
 		try {
 			fin = new FileInputStream(storeFile);
 			KeyStore store = KeyStore.getInstance(storeType);
-			store.load(fin, "333333".toCharArray());
+			store.load(fin, storePass.toCharArray());
 
 			return store;
 		} finally {

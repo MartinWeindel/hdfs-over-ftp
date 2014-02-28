@@ -1,6 +1,12 @@
 package org.apache.hadoop.contrib.ftp;
 
-import org.apache.ftpserver.ftplet.FileObject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.ftpserver.ftplet.FtpFile;
 import org.apache.ftpserver.ftplet.User;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -11,14 +17,10 @@ import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 /**
  * This class implements all actions to HDFS
  */
-public class HdfsFileObject implements FileObject {
+public class HdfsFileObject implements FtpFile {
 
 	private final Logger log = LoggerFactory.getLogger(HdfsFileObject.class);
 
@@ -78,7 +80,7 @@ public class HdfsFileObject implements FileObject {
 			log.debug("is directory? : " + path);
 			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FileStatus fs = dfs.getFileStatus(path);
-			return fs.isDir();
+			return fs.isDirectory();
 		} catch (IOException e) {
 			log.debug(path + " is not dir", e);
 			return false;
@@ -333,10 +335,10 @@ public class HdfsFileObject implements FileObject {
 	 * @param fileObject location to move the object
 	 * @return true if the object is moved successfully
 	 */
-	public boolean move(FileObject fileObject) {
+	public boolean move(FtpFile fileObject) {
 		try {
 			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
-			dfs.rename(path, new Path(fileObject.getFullName()));
+			dfs.rename(path, new Path(fileObject.getAbsolutePath()));
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -349,7 +351,7 @@ public class HdfsFileObject implements FileObject {
 	 *
 	 * @return List of files in the directory
 	 */
-	public FileObject[] listFiles() {
+	public List<FtpFile>listFiles() {
 
 		if (!hasReadPermission()) {
 			log.debug("No read permission : " + path);
@@ -360,9 +362,9 @@ public class HdfsFileObject implements FileObject {
 			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FileStatus fileStats[] = dfs.listStatus(path);
 
-			FileObject fileObjects[] = new FileObject[fileStats.length];
+			List<FtpFile> fileObjects = new ArrayList<FtpFile>();
 			for (int i = 0; i < fileStats.length; i++) {
-				fileObjects[i] = new HdfsFileObject(fileStats[i].getPath().toString(), user);
+			    fileObjects.add(new HdfsFileObject(fileStats[i].getPath().toString(), user));
 			}
 			return fileObjects;
 		} catch (IOException e) {
@@ -417,4 +419,48 @@ public class HdfsFileObject implements FileObject {
 			return null;
 		}
 	}
+
+
+    public String getAbsolutePath()
+    {
+        return path.toString();
+    }
+
+
+    public String getName()
+    {
+        String full = getFullName();
+        int pos = full.lastIndexOf("/");
+        if (pos == 0) {
+            return "/";
+        }
+        return full.substring(pos + 1);
+    }
+
+
+    public boolean isReadable()
+    {
+        return hasReadPermission();
+    }
+
+   
+    public boolean isWritable()
+    {
+        return hasWritePermission();
+    }
+
+   
+    public boolean isRemovable()
+    {
+        return hasWritePermission();
+    }
+
+   
+    public boolean setLastModified(long time)
+    {
+      
+        return false;
+    }
+
+
 }
